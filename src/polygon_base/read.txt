@@ -1,0 +1,56 @@
+创建和使用插件（C++）
+参考链接:
+    https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Pluginlib.html#create-the-base-class-package
+    http://wiki.ros.org/pluginlib
+    http://wiki.ros.org/pluginlib/Tutorials/Writing%20and%20Using%20a%20Simple%20Plugin
+
+1 创建基础类包:
+    ros2 pkg create --build-type ament_cmake \
+    --license Apache-2.0 \
+    --dependencies pluginlib \
+    --node-name area_node \
+    polygon_base
+
+    创建hpp: src/polygon_base/include/polygon_base/regular_polygon.hpp
+
+    CMakeLists.txt
+    ament_target_dependencies 之后添加：
+        // 作用：让其他类可以使用这个头文件
+        install(
+            DIRECTORY include/
+            DESTINATION include
+        )
+    ament_package 命令之前添加此命令： 
+        // 作用：让其他类可以使用这个头文件  
+        ament_export_include_directories(
+            include
+        )
+
+-----------------------------
+2. 创建插件包
+    ros2 pkg create --build-type ament_cmake \
+    --license Apache-2.0 \
+    --dependencies polygon_base pluginlib \
+    --library-name polygon_plugins \
+    polygon_plugins
+
+    编辑 src/polygon_plugins/src/polygon_plugins.cpp ：
+        ...
+        // 将类注册为真正的插件
+        PLUGINLIB_EXPORT_CLASS(polygon_plugins::Square, polygon_base::RegularPolygon)
+        PLUGINLIB_EXPORT_CLASS(polygon_plugins::Triangle, polygon_base::RegularPolygon)
+        ...
+
+    编辑 src/polygon_plugins/plugins.xml
+    该文件作用： 
+        上述步骤使插件实例能够在包含库加载时创建，但插件加载器仍然需要一个方法来找到该库并知道在库中引用什么内容。
+        为此，我们还将创建一个 XML 文件，结合包清单中的特殊导出行，使有关我们插件的必要信息对 ROS 工具链可用。
+
+    CMakeLists.txt：
+    在读取 find_package(pluginlib REQUIRED) 的行之后添加:
+    pluginlib_export_plugin_description_file(polygon_base plugins.xml)
+
+--------------------
+3. 使用插件
+    src/basic_ros2/src/area_node.cpp
+    src/polygon_base/src/area_node.cpp
