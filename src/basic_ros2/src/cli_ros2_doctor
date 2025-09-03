@@ -1,0 +1,78 @@
+---------------------
+整体检查ros2设置：
+    $ ros2 doctor   #检查ros2设置
+
+    警告信息：UserWarning: ...
+
+    不稳定的 ROS 2 发行版 提示信息：
+    UserWarning: Distribution <distro> is not fully supported or tested. 
+    To get more consistent features, download a stable version at https://index.ros.org/doc/ros2/Installation/
+
+    失败信息：
+    1/3 checks failed
+    Failed modules:  network
+
+---------------------
+检查系统：Check a system
+
+举例检查： turtlesim
+启动：
+    1. ros2 run turtlesim turtlesim_node
+    2. ros2 run turtlesim turtle_teleop_key
+运行检查指令：
+    $ ros2 doctor
+    UserWarning: Publisher without subscriber detected on /turtle1/color_sensor.
+    UserWarning: Publisher without subscriber detected on /turtle1/pose.
+    警告信息：两个话题未被订阅
+
+订阅这两个话题 并运行检查指令：
+    $ ros2 topic echo /turtle1/color_sensor
+    $  ros2 topic echo /turtle1/pose
+    $ ros2 doctor
+    All 3 checks passed
+    # 消除了 话题未被订阅的警告信息
+
+----------------------
+ros2设置 报告信息：$ ros2 doctor
+获取完整报告信息：$ ros2 doctor --report
+
+   NETWORK CONFIGURATION    # 网络配置
+inet         : 127.0.0.1
+inet4        : ['127.0.0.1']
+inet6        : ['::1']
+netmask      : 255.0.0.0
+device       : lo
+flags        : 73<UP,LOOPBACK,RUNNING>
+mtu          : 65536
+inet         : 192.168.144.194
+inet4        : ['192.168.144.194']
+ether        : 4c:34:88:e9:ab:f1
+inet6        : ['fe80::4b22:73ef:e748:a636%wlp2s0']
+netmask      : 255.255.255.0
+device       : wlp2s0
+flags        : 4163<UP,MULTICAST,BROADCAST,RUNNING>
+mtu          : 1500
+broadcast    : 192.168.144.255
+ether        : f8:ca:b8:0a:d8:95
+device       : enp3s0
+flags        : 4099<UP,MULTICAST,BROADCAST>
+mtu          : 1500
+
+   PLATFORM INFORMATION     # 平台信息
+system           : Linux
+platform info    : Linux-6.8.0-79-generic-x86_64-with-glibc2.39
+release          : 6.8.0-79-generic
+processor        : x86_64
+
+   QOS COMPATIBILITY LIST   # QOS兼容性列表
+compatibility status    : No publisher/subscriber pairs found
+
+   RMW MIDDLEWARE           # RMW中间件
+middleware name    : rmw_fastrtps_cpp
+
+   TOPIC LIST               # Topic列表
+topic               : none
+publisher count     : 0
+subscriber count    : 0
+
+

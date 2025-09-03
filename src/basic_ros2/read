@@ -1,0 +1,55 @@
+-------------------------------------
+构建：
+$ ros2 pkg create basic_ros2  --build-type ament_cmake --dependencies rclcpp --node-name demo
+$ colcon build --packages-select basic_ros2
+$ source install/setup.bash
+$ ros2 run basic_ros2 demo 
+  输出语句--- hello world basic_ros2 package
+
+
+-------------------------------------
+定义interface 流程：
+
+step0:
+功能包创建：
+    ros2 pkg create --build-type ament_cmake base_interfaces_demo
+    创建过程 没有添加任何依赖
+
+step1:
+package.xml
+    <depend>geometry_msgs</depend>
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+    <exec_depend>rosidl_default_runtime</exec_depend>
+    <member_of_group>rosidl_interface_packages</member_of_group>
+
+    通过指令查询：
+        $ ros2 pkg list | grep -i rosidl
+
+step2:
+cmakelist.txt
+    find_package(rosidl_default_generators REQUIRED)
+    #为接口文件生成源代码
+    rosidl_generate_interfaces{ ${PROJECT_NAME}
+        "msg/Student.msg"
+    }
+
+step3:
+编写msg:Student 
+    名称:首字母必须大写
+    数据类型：
+        int8, int16, int32, int64 (或者无符号类型: uint*)
+		float32, float64
+		string
+		time, duration
+        
+编译功能包：
+    $ colcon build --packages-select base_interfaces_demo 
+    $ source install/setup.bash
+
+验证：
+    查看该pkg下有哪些可用的interface
+    $ ros2 interface package basic_interfaces_demo
+    显示
+    $ ros2 interface show basic_interfaces_demo/msg/Num
+
+
