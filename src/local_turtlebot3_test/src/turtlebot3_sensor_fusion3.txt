@@ -1,0 +1,204 @@
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/imu.hpp"
+#include "nav_msgs/msg/odometry.hpp"
+#include "ceres/ceres.h"
+#include <Eigen/Dense>
+#include <deque>
+
+using namespace Eigen;
+using namespace ceres;
+
+// 状态结构体：存储机器人位姿与速度
+struct State {
+    double x = 0.0;      // x位置
+    double y = 0.0;      // y位置
+    double yaw = 0.0;    // 偏航角
+    double vx = 0.0;     // x方向速度
+    double vy = 0.0;     // y方向速度
+    double timestamp = 0.0; // 时间戳
+};
+
+// 存储传感器数据的缓冲区
+std::deque<sensor_msgs::msg::Imu> imu_buffer;
+std::deque<nav_msgs::msg::Odometry> odom_buffer;
+State current_state;
+
+// 1. IMU残差函数：基于运动学模型的预测残差
+struct ImuResidual {
+    ImuResidual(double dt, double ax, double ay, double wz) 
+        : dt_(dt), ax_(ax), ay_(ay), wz_(wz) {}
+
+    // 残差计算：残差 = 预测值 - 观测值（IMU积分结果）
+    template <typename T>
+    bool operator()(const T* const state_prev,  // 上一时刻状态 [x, y, yaw, vx, vy]
+                    const T* const state_curr,  // 当前时刻状态 [x, y, yaw, vx, vy]
+                    T* residual) const {
+        // 上一时刻状态
+        T x_prev = state_prev[0];
+        T y_prev = state_prev[1];
+        T yaw_prev = state_prev[2];
+        T vx_prev = state_prev[3];
+        T vy_prev = state_prev[4];
+
+        // 当前时刻状态
+        T x_curr = state_curr[0];
+        T y_curr = state_curr[1];
+        T yaw_curr = state_curr[2];
+        T vx_curr = state_curr[3];
+        T vy_curr = state_curr[4];
+
+        // 1. 计算角速度引起的偏航角变化（简化：积分）
+        T delta_yaw = wz_ * dt_;
+        T yaw_pred = yaw_prev + delta_yaw;
+
+        // 2. 计算线速度变化（基于加速度，简化：ax, ay为机体坐标系，转换到世界坐标系）
+        T ax_world = ax_ * cos(yaw_prev) - ay_ * sin(yaw_prev);  // 机体加速度转世界系
+        T ay_world = ax_ * sin(yaw_prev) + ay_ * cos(yaw_prev);
+        T vx_pred = vx_prev + ax_world * dt_;
+        T vy_pred = vy_prev + ay_world * dt_;
+
+        // 3. 计算位置变化（基于速度积分）
+        T x_pred = x_prev + (vx_prev + vx_pred) / 2.0 * dt_;  // 梯形积分
+        T y_pred = y_prev + (vy_prev + vy_pred) / 2.0 * dt_;
+
+        // 残差：预测值与当前状态的差值（希望最小化）
+        residual[0] = x_curr - x_pred;       // x位置残差
+        residual[1] = y_curr - y_pred;       // y位置残差
+        residual[2] = yaw_curr - yaw_pred;   // 偏航角残差
+        residual[3] = vx_curr - vx_pred;     // x速度残差
+        residual[4] = vy_curr - vy_pred;     // y速度残差
+
+        return true;
+    }
+
+    double dt_;   // 时间间隔
+    double ax_;   // IMU x方向加速度（机体系）
+    double ay_;   // IMU y方向加速度（机体系）
+    double wz_;   // IMU z方向角速度（偏航角速度）
+};
+
+// 2. 里程计残差函数：观测位置与状态位置的残差
+struct OdomResidual {
+    OdomResidual(double x_obs, double y_obs) : x_obs_(x_obs), y_obs_(y_obs) {}
+
+    template <typename T>
+    bool operator()(const T* const state, T* residual) const {
+        // 残差 = 状态位置 - 观测位置
+        residual[0] = state[0] - x_obs_;  // x位置残差
+        residual[1] = state[1] - y_obs_;  // y位置残差
+        return true;
+    }
+
+    double x_obs_;  // 里程计观测x
+    double y_obs_;  // 里程计观测y
+};
+
+class OptimizationFusionNode : public rclcpp::Node {
+public:
+    OptimizationFusionNode() : Node("optimization_fusion_node") {
+        // 订阅IMU和里程计话题
+        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+            "/imu/data", 10, 
+            std::bind(&OptimizationFusionNode::imu_callback, this, std::placeholders::_1)
+        );
+        odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/odom", 10, 
+            std::bind(&OptimizationFusionNode::odom_callback, this, std::placeholders::_1)
+        );
+
+        // 定时优化（10Hz）
+        timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(100),
+            std::bind(&OptimizationFusionNode::optimize, this)
+        );
+
+        RCLCPP_INFO(this->get_logger(), "Optimization fusion node initialized.");
+    }
+
+private:
+    // IMU数据回调：存入缓冲区
+    void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+        imu_buffer.push_back(*msg);
+        if (imu_buffer.size() > 100) imu_buffer.pop_front();  // 限制缓冲区大小
+    }
+
+    // 里程计数据回调：存入缓冲区
+    void odom_callback(const sensor_msgs::msg::Odometry::SharedPtr msg) {
+        odom_buffer.push_back(*msg);
+        if (odom_buffer.size() > 10) odom_buffer.pop_front();  // 限制缓冲区大小
+    }
+
+    // 优化函数：使用Ceres求解
+    void optimize() {
+        if (imu_buffer.size() < 2 || odom_buffer.empty()) return;  // 数据不足
+
+        // 1. 准备状态变量（当前时刻和上一时刻）
+        State state_prev = current_state;
+        State state_curr = current_state;  // 初始值为当前状态
+
+        // 2. 构建问题
+        Problem problem;
+
+        // 3. 添加IMU约束（使用最近的IMU数据）
+        auto imu_prev = imu_buffer[imu_buffer.size() - 2];
+        auto imu_curr = imu_buffer[imu_buffer.size() - 1];
+        double dt = (imu_curr.header.stamp.sec + imu_curr.header.stamp.nanosec/1e9) - 
+                    (imu_prev.header.stamp.sec + imu_prev.header.stamp.nanosec/1e9);
+
+        // IMU数据（机体系加速度和角速度）
+        double ax = imu_curr.linear_acceleration.x;
+        double ay = imu_curr.linear_acceleration.y;
+        double wz = imu_curr.angular_velocity.z;
+
+        // 添加IMU残差项（使用Huber核函数处理异常值）
+        CostFunction* imu_cost = new AutoDiffCostFunction<ImuResidual, 5, 5, 5>(
+            new ImuResidual(dt, ax, ay, wz)
+        );
+        problem.AddResidualBlock(imu_cost, new HuberLoss(1.0), 
+                                state_prev, state_curr);  // 前一状态 -> 当前状态
+
+        // 4. 添加里程计约束（使用最新的里程计数据）
+        auto odom = odom_buffer.back();
+        double x_obs = odom.pose.pose.position.x;
+        double y_obs = odom.pose.pose.position.y;
+
+        CostFunction* odom_cost = new AutoDiffCostFunction<OdomResidual, 2, 5>(
+            new OdomResidual(x_obs, y_obs)
+        );
+        problem.AddResidualBlock(odom_cost, new HuberLoss(0.5), state_curr);  // 当前状态约束
+
+        // 5. 配置求解器并运行优化
+        Solver::Options options;
+        options.linear_solver_type = DENSE_QR;  // 小型问题用QR分解
+        options.max_num_iterations = 50;
+        options.minimizer_progress_to_stdout = false;
+
+        Solver::Summary summary;
+        Solve(options, &problem, &summary);
+
+        // 6. 更新当前状态
+        current_state.x = state_curr[0];
+        current_state.y = state_curr[1];
+        current_state.yaw = state_curr[2];
+        current_state.vx = state_curr[3];
+        current_state.vy = state_curr[4];
+
+        // 打印优化结果
+        RCLCPP_INFO_STREAM(this->get_logger(), 
+            "Optimized State: \n"
+            "  x: " << current_state.x << ", y: " << current_state.y << "\n"
+            "  yaw: " << current_state.yaw << ", vx: " << current_state.vx << ", vy: " << current_state.vy
+        );
+    }
+
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::TimerBase::SharedPtr timer_;
+};
+
+int main(int argc, char* argv[]) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<OptimizationFusionNode>());
+    rclcpp::shutdown();
+    return 0;
+}
