@@ -1,0 +1,30 @@
+定义action文件:
+# https://docs.ros.org/en/jazzy/Tutorials/Intermediate/Creating-an-Action.html
+------------
+.action文件格式：
+# Request
+---
+# Result
+---
+# Feedback
+
+------------
+CMakeLists.txt 的 ament_package() 行之前添加：
+
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/Fibonacci.action"
+)
+
+------------
+package.xml 中添加所需的依赖项
+
+<buildtool_depend>rosidl_default_generators</buildtool_depend>
+<member_of_group>rosidl_interface_packages</member_of_group>
+
+------------
+构建 编译 运行
+colcon build # Build
+source install/local_setup.bash
+ros2 interface package basic_interfaces
+$ ros2 interface show basic_interfaces/action/Fibonacci
