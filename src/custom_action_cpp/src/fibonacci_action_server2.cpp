@@ -64,6 +64,8 @@ private:
         auto feedback = std::make_shared<custom_action_interfaces::action::Fibonacci::Feedback>();
         auto result = std::make_shared<custom_action_interfaces::action::Fibonacci::Result>();
         rclcpp::Rate loop_rate(1);
+        
+        //逻辑
         result->sequence.push_back(1);
         result->sequence.push_back(3);
         RCLCPP_INFO(this->get_logger(), "Goal Canceled %d ",result->sequence.at(0));
