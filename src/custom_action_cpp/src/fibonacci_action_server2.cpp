@@ -63,17 +63,26 @@ private:
         const auto goal = goal_handle->get_goal();
         auto feedback = std::make_shared<custom_action_interfaces::action::Fibonacci::Feedback>();
         auto result = std::make_shared<custom_action_interfaces::action::Fibonacci::Result>();
-      
         rclcpp::Rate loop_rate(1);
-        for (size_t i = 0; i < 10; i++) {
+        result->sequence.push_back(1);
+        result->sequence.push_back(3);
+        RCLCPP_INFO(this->get_logger(), "Goal Canceled %d ",result->sequence.at(0));
+        RCLCPP_INFO(this->get_logger(), "Goal Canceled %d ",result->sequence.at(1));
+        for (size_t i = 2; i <= goal->order; i++) {
           if (goal_handle->is_canceling()) {
             goal_handle->canceled(result);
             RCLCPP_ERROR(this->get_logger(), "Goal Canceled");
             return;
           }
-      
+
+          int next_num =  result->sequence[i-1] + result->sequence[i-2];
+          result->sequence.push_back(next_num);
+
+          //发送反馈
+          feedback->partial_sequence = result->sequence;
           goal_handle->publish_feedback(feedback);
-          RCLCPP_INFO(this->get_logger(), "Sent feedback");
+          RCLCPP_INFO(this->get_logger(), "Goal Canceled %d ",next_num);
+          
           loop_rate.sleep();
         }
       
