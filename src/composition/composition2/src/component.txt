@@ -1,0 +1,23 @@
+# 查看可用组件
+ros2 component types
+
+# 启动组件容器 加载组件
+$ ros2 run rclcpp_components component_container
+# 加载组件
+$ ros2 component load /ComponentManager composition composition::Talker
+$ ros2 component load /ComponentManager composition composition::Listener
+$ ros2 component load /ComponentManager composition composition::Client
+$ ros2 component load /ComponentManager composition composition::Server
+
+
+
+
+
+
+
+
+
+
+
+
+
