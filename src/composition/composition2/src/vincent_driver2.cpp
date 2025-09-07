@@ -44,16 +44,26 @@ CMakeLists.txt：
 */
 #include "rclcpp/rclcpp.hpp"
 #include <rclcpp_components/register_node_macro.hpp> 
-
+/**
+ * @brief 注册组件案例
+ */
 namespace ns{
 class VincentDriver : public rclcpp::Node
 {
 public:
+    /**
+     * @brief 无参构造函数
+     */
     VincentDriver() : Node("vincent_driver2_node")
     {
         RCLCPP_INFO(this->get_logger(), "Default construction: hello");
     }
 
+    /**
+     * @brief 带参构造函数
+     * 接受options 并初始化 Node. nodename:vincent_driver_node
+     * @param const rclcpp::NodeOptions & options
+     */
     VincentDriver(const rclcpp::NodeOptions & options) : Node("vincent_driver_node",options)
     {
         RCLCPP_INFO(this->get_logger(), "With args(options) construction:hello options");
