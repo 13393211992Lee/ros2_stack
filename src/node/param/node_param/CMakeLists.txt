@@ -23,6 +23,8 @@ add_library(parameter_blackboard_component SHARED src/parameter_blackboard.cpp)
 add_library(list_parameters_component SHARED src/list_parameters.cpp) 
 add_library(even_parameters_node_component SHARED src/even_parameters_node.cpp) 
 add_library(parameter_events_async_component SHARED src/parameter_events_async.cpp) 
+add_library(set_and_get_parameters_component SHARED src/set_and_get_parameters.cpp) 
+add_library(set_parameters_callback_component SHARED src/set_and_get_parameters.cpp) 
 
 # 定义component 3： 构建依赖
 ament_target_dependencies(
@@ -44,6 +46,17 @@ ament_target_dependencies(
   parameter_events_async_component
   "rclcpp"
   "rclcpp_components" 
+)
+ament_target_dependencies(
+  set_and_get_parameters_component
+  "rclcpp"
+  "rclcpp_components" 
+)
+ament_target_dependencies(
+  set_parameters_callback_component
+  "rclcpp"
+  "rclcpp_components" 
+  "rcl_interfaces"
 )
 
 # 定义component 4： 声明组件
@@ -67,6 +80,17 @@ rclcpp_components_register_node(
   PLUGIN "node_param::ParameterEventsAsyncNode"
   EXECUTABLE parameter_events_async  #$ ros2 run pkg EXECUTABLE
 )
+rclcpp_components_register_node(
+  set_and_get_parameters_component
+  PLUGIN "node_param::SetAndGetParameters"
+  EXECUTABLE set_and_get_parameters  #$ ros2 run pkg EXECUTABLE
+)
+rclcpp_components_register_node(
+  set_parameters_callback_component
+  PLUGIN "node_param::SetParametersCallback"
+  EXECUTABLE set_parameters_callback  #$ ros2 run pkg EXECUTABLE
+)
+
 # 定义component 5： CMake中作用于该目标的安装命令，改为库安装
 ament_export_targets(export_parameter_blackboard_component)
 install(TARGETS parameter_blackboard_component
@@ -96,12 +120,27 @@ install(TARGETS parameter_events_async_component
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
+ament_export_targets(export_set_and_get_parameters_component)
+install(TARGETS set_and_get_parameters_component
+  EXPORT export_set_and_get_parameters_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+ament_export_targets(export_set_parameters_callback_component)
+install(TARGETS set_parameters_callback_component
+  EXPORT export_set_parameters_callback_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 # component  end -----------------------
 
 # execute start -----------
 add_executable(list_parameters_async src/list_parameters_async.cpp)
 add_executable(parameter_event_handler src/parameter_event_handler.cpp)
 add_executable(parameter_events src/parameter_events.cpp)
+add_executable(set_and_get_parameters_async src/set_and_get_parameters_async.cpp)
 ament_target_dependencies(
   list_parameters_async
   "rclcpp"
@@ -115,11 +154,16 @@ ament_target_dependencies(
   parameter_events
   "rclcpp"
   "rcl_interfaces"
+)
+ament_target_dependencies(
+  set_and_get_parameters_async
+  "rclcpp"
 )
 install(TARGETS 
   list_parameters_async
   parameter_event_handler
   parameter_events
+  set_and_get_parameters_async
   DESTINATION lib/${PROJECT_NAME}
 )
 
