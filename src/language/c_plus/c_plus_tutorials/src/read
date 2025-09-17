@@ -1,0 +1,14 @@
+内联函数
+extern “C”浅析
+初始化列表 p40页
+深拷贝和浅拷贝 37页
+多个对象构造和析构  初始化列表 40 
+
+demo15_Dynamic_object_creation_c++  未进行
+静态成员实现单例模式 p53.52    c_d17
+
+ 静态成员实现单例模式  demo17_static_var_singleton_mode 
+ true false
+ 1      0
+
+ 符号重载 p60----p70
