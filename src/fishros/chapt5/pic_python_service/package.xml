@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>pic_python_service</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="13393211992@163.com">zhang</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>pic_interface</depend>
+  <depend>cv_bridge</depend>    <!-- 图像格式转换 -->
+  <depend>sensor_msgs</depend>  <!-- 图像消息类型 -->
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
