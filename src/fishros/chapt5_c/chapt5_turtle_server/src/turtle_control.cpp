@@ -18,8 +18,10 @@ using Twist = geometry_msgs::msg::Twist;
 class TurtleControl : public rclcpp::Node
 {
 public:
-    TurtleControl() : Node("turtle_control_node")
+    TurtleControl() : Node("turtle_control_node"),has_reached_goal_(false)
     {
+        
+        TurtleControl::declare_his_param();
         using std::placeholders::_1;
         sub_turtle_pose_ = this->create_subscription<Pose>(
             "/turtle1/pose", 10, std::bind(&TurtleControl::sub_turtle_cb, this, _1));
@@ -29,27 +31,66 @@ public:
         timer_ = this->create_wall_timer(
             std::chrono::seconds(1),
             std::bind(&TurtleControl::pub_turtle_twist, this));
-
     }
+     // 提供一个接口供主线程判断是否到达目标点
+    bool has_reached_goal() const {
+        return has_reached_goal_;
+    }
+    void declare_his_param(){
+        this->declare_parameter<double>("goal_x", 3.0);
+        this->declare_parameter<double>("goal_y", 3.0);
+        this->declare_parameter<double>("k_linear", 0.9);
+        this->declare_parameter<double>("k_angular", 0.6);
 
+        // 获取参数时增加类型检查
+        rclcpp::Parameter param_x = this->get_parameter("goal_x");
+        rclcpp::Parameter param_y= this->get_parameter("goal_y");
+        rclcpp::Parameter param_k_linear = this->get_parameter("k_linear");
+        rclcpp::Parameter param_k_angular= this->get_parameter("k_angular");
+        if(param_x.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE){
+            goal_x = param_x.get_value<double>();
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "goal_x 类型错误，使用默认值 3.0");
+            goal_x = 3.0; // 默认值
+        }
+        if(param_y.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE){
+            goal_y = param_y.get_value<double>();
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "goal_y 类型错误，使用默认值 3.0");
+            goal_y = 3.0; // 默认值
+        }
+        if(param_k_linear.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE){
+            k_linear = param_k_linear.get_value<double>();
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "k_linear 类型错误，使用默认值 3.0");
+            k_linear = 0.9; // 默认值
+        }
+        if(param_k_angular.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE){
+            k_angular = param_k_angular.get_value<double>();
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "k_angular 类型错误，使用默认值 3.0");
+            k_angular = 0.6; // 默认值
+        }
+    }
 private:
-    // 目标位置
-    double goal_x = 3.0;
-    double goal_y = 4.0;
-    // 比例系数
-    double k_linear = 0.9;    // 线性速度比例系数
-    double k_angular = 0.6;   // 角速度比例系数
+
+    double goal_x , goal_y;
+    double k_linear, k_angular;// 控制线速度
+
     // 当前位置
     double current_x = 0.0;
     double current_y = 0.0;
     double current_theta = 0.0;
+    bool has_reached_goal_;  // 到达目标点的标志位
 
     rclcpp::Publisher<Twist>::SharedPtr pub_turtle_twist_;
     rclcpp::Subscription<Pose>::SharedPtr sub_turtle_pose_;
     rclcpp::TimerBase::SharedPtr timer_;
-
     void pub_turtle_twist()
     {
+        if (has_reached_goal_) {
+            return;  // 已到达目标，不再发布指令
+        }
         auto twist = calculate_twist();
         pub_turtle_twist_->publish(twist);
     }
@@ -60,15 +101,16 @@ private:
         float distance_y = goal_y - current_y;
 
         // 计算两点距离
-        float distance_2point = std::sqrt(distance_x * distance_y + distance_y * distance_y);
-        // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
-        //                         "两点距离:%2.f",distance_2point);
+        float distance_2point = std::sqrt(distance_x * distance_x + distance_y * distance_y);
+        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, 
+                                "两点距离:%2.f",distance_2point);
         
         // 如果距离目标点足够近，则停止移动
         if(distance_2point < 0.1){
             twist.linear.x=0.0;
             twist.angular.z = 0.0;
-            RCLCPP_INFO(this->get_logger(), "已到达目标点!");
+            RCLCPP_INFO_ONCE(this->get_logger(), "已到达目标点!");
+            has_reached_goal_ = true;  // 设置标志位
             return twist;
         }
 
@@ -125,7 +167,19 @@ private:
 int main(int argc, char * argv[])
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<TurtleControl>());
+    auto node = std::make_shared<TurtleControl>();
+    while (rclcpp::ok() && !node->has_reached_goal())
+    {
+        rclcpp::spin_some(node);  // 处理一次回调事件
+    }
+    
     rclcpp::shutdown();
     return 0;
 }
+
+/*
+$ ros2 run chapt5_turtle_server turtle_control  --ros-args --param goal_x:=9.0
+$ ros2 run chapt5_turtle_server  turtle_control --ros-args --param goal_x:=9.0 --param goal_y:=9.0
+$ ros2 run chapt5_turtle_server  turtle_control --ros-args --param goal_x:=9.0 --param goal_y:=9.0 --param k_linear:=0.3 --param k_angular:=0.3
+
+ */

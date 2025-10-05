@@ -4,7 +4,7 @@
 #include "cmath"
 #include "geometry_msgs/msg/twist.hpp"
 #include "chapt5_interface/srv/patrol.hpp"
-// install/chapt5_interface/include/chapt5_interface/chapt5_interface/srv/potrol.hpp
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 /**
  * @brief  
@@ -15,7 +15,7 @@
  * 3. 发布
  */
 
-
+using SetParametersResult = rcl_interfaces::msg::SetParametersResult;
 using Pose = turtlesim::msg::Pose;
 using Twist = geometry_msgs::msg::Twist;
 using Patrol = chapt5_interface::srv::Patrol;
@@ -32,7 +32,31 @@ public:
         //2.订阅乌龟位置信息
         sub_turtle_pose_ = this->create_subscription<Pose>(
             "/turtle1/pose", 10, std::bind(&TurtleControlServer::sub_turtle_cb, this, _1));
-
+            
+        // 参数更新后 额外调用我们添加的回调函数，可以做到参数实时更新
+        parameter_callback_handle_ = this->add_on_set_parameters_callback(
+            [&](const std::vector<rclcpp::Parameter> & parameters)
+            ->rcl_interfaces::msg::SetParametersResult{
+                rcl_interfaces::msg::SetParametersResult result;
+                result.successful = true;
+                for (const auto & parameter : parameters) {
+                    RCLCPP_INFO(this->get_logger(), "更新参数的值%s=%f",parameter.get_name().c_str(),
+                        parameter.as_double());
+                    if(parameter.get_name() == "goal_x"){
+                        goal_x = parameter.as_double();
+                    }
+                    else if(parameter.get_name() == "goal_y"){
+                        goal_y = parameter.as_double();
+                    }
+                    else if(parameter.get_name() == "k_linear"){
+                        k_linear = parameter.as_double();
+                    }
+                    else if(parameter.get_name() == "k_angular"){
+                        k_angular = parameter.as_double();
+                    }
+                }
+            return result;
+        });
         //3. 接收客户端发送的goal信息
         patrol_server_ = this->create_service<Patrol>(
             "patrol_server", std::bind(&TurtleControlServer::patrol_server_cb, this, _1, _2));
@@ -76,13 +100,13 @@ public:
         if(param_k_linear.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE){
             k_linear = param_k_linear.get_value<double>();
         } else {
-            RCLCPP_ERROR(this->get_logger(), "k_linear 类型错误，使用默认值 3.0");
+            RCLCPP_ERROR(this->get_logger(), "k_linear 类型错误，使用默认值 0.9");
             k_linear = 0.9; // 默认值
         }
         if(param_k_angular.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE){
             k_angular = param_k_angular.get_value<double>();
         } else {
-            RCLCPP_ERROR(this->get_logger(), "k_angular 类型错误，使用默认值 3.0");
+            RCLCPP_ERROR(this->get_logger(), "k_angular 类型错误，使用默认值 0.6");
             k_angular = 0.6; // 默认值
         }
     }
@@ -101,19 +125,24 @@ private:
     rclcpp::Subscription<Pose>::SharedPtr sub_turtle_pose_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Service<Patrol>::SharedPtr patrol_server_;
+    OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
     void pub_turtle_twist()
     {
         if (has_reached_goal_) {
             return;  // 已到达目标，不再发布指令
+        }else{
+            // RCLCPP_INFO(this->get_logger(), "calculate_twist & publish");
+            auto twist = calculate_twist();
+            pub_turtle_twist_->publish(twist);
         }
-        auto twist = calculate_twist();
-        pub_turtle_twist_->publish(twist);
     }
 
     bool patrol_server_cb(
         const std::shared_ptr<Patrol::Request> request,
         std::shared_ptr<Patrol::Response> response)
     {
+
+
         if (request->target_x >0 && request->target_x <10 && 
             request->target_y >0 && request->target_y <10 )
         {
@@ -126,8 +155,8 @@ private:
             RCLCPP_INFO(this->get_logger(), "参数不符合 x,y(0,10)");
             return response->FAIL;
         }
-        
-        
+
+
     }
     Twist calculate_twist(){
         Twist twist;
@@ -136,8 +165,7 @@ private:
 
         // 计算两点距离
         float distance_2point = std::sqrt(distance_x * distance_x + distance_y * distance_y);
-        RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, 
-                                "两点距离:%2.f",distance_2point);
+        // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 500, "两点距离:%2.f",distance_2point);
         
         // 如果距离目标点足够近，则停止移动
         if(distance_2point < 0.1){
