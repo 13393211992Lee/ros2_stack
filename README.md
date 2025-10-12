@@ -2,10 +2,6 @@
 A basic overview of the ROS2 technology stack.
 
 # Learn ROS
-[黑马 ros机器人操作系统](http://robot.czxy.com/docs/ros/arch/)
-
-[ROS，工业自动化，opencv，3d点云，机器学习，机械臂, 智能机器人，机器人分拣](https://github.com/itheima1/robotics-ros)
-
 [中国大学MOOC《机器人操作系统入门》课程代码示例](https://github.com/Ewenwan/ROS-Academy-for-Beginners)
 
 [ROS 1 和 ROS 2 的前世、今生、安装使用说明与资料汇总](https://blog.csdn.net/zhangrelay/article/details/78418393)
