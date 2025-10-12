@@ -1,5 +1,7 @@
 #include <cstdio>
-
+/*
+@brief 简单demo 随着pkg创建而生 简化配置
+*/
 int main(int argc, char ** argv)
 {
   (void) argc;
