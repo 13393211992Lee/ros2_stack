@@ -178,6 +178,8 @@ int main(int argc, char * argv[])
 }
 
 /*
+1. 启动 turtlesim_node
+2. 启动 control
 $ ros2 run chapt5_turtle_server turtle_control  --ros-args --param goal_x:=9.0
 $ ros2 run chapt5_turtle_server  turtle_control --ros-args --param goal_x:=9.0 --param goal_y:=9.0
 $ ros2 run chapt5_turtle_server  turtle_control --ros-args --param goal_x:=9.0 --param goal_y:=9.0 --param k_linear:=0.3 --param k_angular:=0.3

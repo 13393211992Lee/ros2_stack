@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
 class TurtleControlClient : public rclcpp::Node
 {
 public:
-    TurtleControlClient() : Node("turtle_control_lient")
+    TurtleControlClient() : Node("turtle_control_client")
     {
         srand(time(NULL));
         patrol_client_ = this->create_client<Patrol>("patrol_server");
@@ -37,7 +37,7 @@ private:
         while (!this->patrol_client_->wait_for_service(1s))
         {
             if(!rclcpp::ok()){
-                RCLCPP_INFO(this->get_logger(), "等待服务器上限过程中...rclcpp shutdown...");
+                RCLCPP_INFO(this->get_logger(), "等待服务器启动过程中...rclcpp shutdown...");
             }
         RCLCPP_INFO(this->get_logger(), "等待服务器启动");
         }

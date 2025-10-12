@@ -150,12 +150,12 @@ private:
             goal_x = request->target_x ;
             goal_y = request->target_y ;
             RCLCPP_INFO(this->get_logger(), "Received request x:%.2f,y:%.2f",goal_x, goal_y);
-            return response->SUCCESS;
+            response->result = Patrol::Response::SUCCESS; // 设置成功状态
         }else{
             RCLCPP_INFO(this->get_logger(), "参数不符合 x,y(0,10)");
-            return response->FAIL;
+            response->result = Patrol::Response::FAIL; // 设置成功状态
         }
-
+        return true;
 
     }
     Twist calculate_twist(){

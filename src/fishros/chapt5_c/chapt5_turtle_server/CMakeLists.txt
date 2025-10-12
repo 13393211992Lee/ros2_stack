@@ -16,8 +16,18 @@ add_executable(turtle_control src/turtle_control.cpp)
 target_include_directories(turtle_control PRIVATE include)
 ament_target_dependencies(turtle_control rclcpp turtlesim chapt5_interface geometry_msgs)
 
+add_executable(turtle_control_server src/turtle_control_server.cpp)
+target_include_directories(turtle_control_server PRIVATE include)
+ament_target_dependencies(turtle_control_server rclcpp turtlesim chapt5_interface geometry_msgs)
+
+add_executable(turtle_control_client src/turtle_control_client.cpp)
+target_include_directories(turtle_control_client PRIVATE include)
+ament_target_dependencies(turtle_control_client rclcpp chapt5_interface geometry_msgs)
+
 install(TARGETS 
   turtle_control
+  turtle_control_server
+  turtle_control_client
   DESTINATION lib/${PROJECT_NAME}
 )
 if(BUILD_TESTING)
