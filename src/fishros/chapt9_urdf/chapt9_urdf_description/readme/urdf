@@ -1,0 +1,101 @@
+1. 编写urdf
+
+2. $ urdf_to_graphviz t1.urdf
+    生成 myfirst.gv & myfirst.pdf文件
+
+3. rviz2 加载 urdf
+    RobotModel --->description sources---> File ----> 选择 urdf 的path
+
+4.安装
+state-publisher
+$ sudo apt search ros-$ROS_DISTRO-joint-state-publisher
+用 $ ros2 run robot_state_publisher robot_state_publisher  --ros-args 加载urdf
+-------------------------- 
+
+5.启动中的错误
+发现错误 调试 --debug
+$ ros2 launch chapt9_urdf_description display_t1_launch.py --debug
+cat  src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/t1.urdf
+rviz2 --> ros2 run rviz2 rviz2 
+rviz 启动时 传入配置文件：
+    $ ros2 run rviz2 rviz2 -d /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/config/display.rviz
+
+cmakelist.txt 中要安装  
+    install(DIRECTORY launch urdf
+    DESTINATION share/${PROJECT_NAME}
+    )
+否则会launch中 get_package_share_directory 会找不到urdf 目录
+
+substitutions_commond_result = launch.substitutions.Command([
+    'cat ',                                                          # cat 后有空格，否则cat 连在一起
+    launch.substitutions.LaunchConfiguration('model')                # []
+])
+
+6.---------
+launch中 parameter argument ros_arguments 的区别：
+parameter 节点参数
+argument
+
+7. xacro
+xacro 文件转 urdf 文件：
+$ xacro /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/t1_xacro.xacro
+或者
+$ xacro /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/t1_xacro.xacro > t1.urdf
+
+8. 验证xacro
+    $ ros2 launch chapt9_urdf_description display_t1_launch.py  model:='/home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/fishbot/fishbot_urdf.xacro'
+
+9. 总结
+编写urdf大致流程
+a> 编写简单的urdf文件 eg:t1.urdf
+    可以通过rviz 检查: RobotModel --->description sources---> File ----> 选择 urdf 的path
+
+b> 编写launch 文件 eg:display_t1_launch.py
+    加载urdf
+    robot_state_publisher
+    joint_state_publisher
+    rviz2 + 配置文件
+
+c> 编写 简单的 xacro
+    通过 声明的参数 加载xacro:
+    $ ros2 launch chapt9_urdf_description display_t1_launch.py --show-args
+    $ ros2 launch chapt9_urdf_description display_t1_launch.py model:='/home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/t1_xacro.xacro'
+
+d> 编写 xacro<visual> 
+    <visual>
+        <origin xyz="${xyz}" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <box size="0.02 0.02 0.02"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.5"/>
+        </material>
+      </visual>
+    通过 c> 调试:重点查看 RobotModel --> Visual Enable
+
+e> 编写 xacro <collision>
+      <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <box size="0.02 0.02 0.02"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.5"/>
+        </material>
+      </collision>
+    通过 c> 调试: 重点查看 RobotModel --> Collision Enable
+
+f> 编写 xacro <inertia />
+    重点： common_inertial.xacro 惯性模板
+    <xacro:include filename="$(find chapt9_urdf_description)/urdf/fishbot/common_inertial.xacro"/>
+    <xacro:box_inertial m="0.05" w="0.02" h="0.02" d="0.02" />
+    通过 c> 调试: 重点查看 RobotModel --> Collision Enable
+
+
+
+
+
+
+
+
+

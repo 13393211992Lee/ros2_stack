@@ -1,0 +1,64 @@
+ros2 启动gazebo
+1. 需要通过 ros_gz 桥接包实现 ROS 2 与 Gazebo Sim 的通信
+    安装ros_gz: $ sudo apt install ros-jazzy-ros-gz
+    安装gz: $ sudo apt install  gz-harmonic
+2. 启动
+$ ros2 launch ros_gz_sim  gz_sim.launch.py
+加载world 文件
+
+$ ros2 launch ros_gz_sim gz_server.launch world_sdf_file:='/home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/world/default.sdf'
+
+$ ros2 launch ros_gz_sim gz_sim.launch.py  gz_args:='/home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/world/myworld.sdf'
+
+3. 错误信息  因为没有启动 gazebo server
+$ ros2 run ros_gz_sim spawn_entity        --name fishbot        --sdf_filename /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/fishbot/fishbot.sdf 
+
+[INFO] [1760366463.554863133] [entity_spawner]: Service not available, waiting...
+[INFO] [1760366464.555564929] [entity_spawner]: Service not available, waiting...
+[INFO] [1760366465.555746898] [entity_spawner]: Service not available, waiting...
+[INFO] [1760366466.555931152] [entity_spawner]: Service not available, waiting...
+
+
+5. 颜色 
+    <gazebo reference="${caster_name}_link" >
+      <material>Gazeobo/Black</material>
+    </gazebo>
+  摩擦系数
+  <gazebo reference="${caster_name}_link">
+    <mu1 value = "20.0" />
+    <mu1 value = "20.0" />
+    <kp value = "100000000.0" />
+    <kd value = "1.0" />
+  </gazebo>
+
+
+
+7. xacro urdf sdf 相互转化
+check_urdf 你的文件.urdf
+xacro fishbot.urdf.xacro > fishbot.urdf
+gz sdf -p fishbot.urdf > fishbot.sdf
+check_urdf 你的文件.urdf
+gz sdf -k 'fishbot.sdf'
+
+8. 加载sdf 文件，控制机器人运动
+gazebo 加载 robot sdf 文件：
+$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/fishbot/fish.sdf
+可以显示机器人，run the simulation 机器人会掉下去，因为没有地面
+
+集成 robot  和 world 到一个文件-> fish_world.sdf, 运行：
+$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/fishbot/fish_world.sdf
+查看话题 $ gz topic -l, 确认有/cmd_vel话题， 发布话题消息：
+ gz topic -t "/cmd_vel" -m gz.msgs.Twist -p "linear: {x: 1}, angular: {z: 0.05}"
+
+若发送了 gz topic -t "/cmd_vel" -m gz.msgs.Twist -p "linear: {x: 1}, angular: {z: 0.05}"
+机器人不移动，原因可能是：
+  a. 检查话题  gazebo_control_plugin.xacro发布的话题 是否是 "/cmd_vel"
+  b. 检查轮子名称 
+    <left_joint>left_wheel_joint</left_joint>
+    <right_joint>right_wheel_joint</right_joint>
+  c.检查轮子是否有 collision 和 visual
+  d. 检查摩擦系数
+
+
+
+

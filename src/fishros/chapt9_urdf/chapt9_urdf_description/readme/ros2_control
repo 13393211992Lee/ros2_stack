@@ -1,0 +1,331 @@
+ros2 control
+
+# 安装
+	$ sudo apt install ros-$ROS_DISTRO-ros2-control ros-$ROS_DISTRO-ros2-controllers
+# 查看 control 帮助信息
+	$ ros2 control -h
+# 查看可用 controllers
+	$ ros2 control
+	
+	$ sudo apt search ros-$ROS_DISTRO-gazebo-ros2-control
+
+# 安装gazebo ros2 control 插件	
+$ sudo apt search ros-$ROS_DISTRO-gazebo-ros2-control
+	
+
+# 代码示例操作：	
+# 代码中编写：fishbot_ros2_control.xacro
+# 启动 ： $ ros2 launch chapt9_urdf_description test_display.launch.py 
+# 查看 ros control 激活的过程：
+[component_container-4] [INFO] [1763528539.201797287] [controller_manager]: Using ROS clock for triggering controller manager cycles.
+[component_container-4] [INFO] [1763528539.380039993] [controller_manager]: Subscribing to '/robot_description' topic for robot description.
+[component_container-4] [WARN] [1763528539.397136246] [ros_gz_container]: Waiting RM to load and initialize hardware...
+[component_container-4] [INFO] [1763528539.397333903] [controller_manager]: Received robot description from topic.
+[component_container-4] [INFO] [1763528539.424460668] [ros_gz_container]: The position_proportional_gain has been set to: 0.1
+[component_container-4] [INFO] [1763528539.424577730] [ros_gz_container]: Loading joint: wheel_left_joint
+[component_container-4] [INFO] [1763528539.424597606] [ros_gz_container]: 	State:
+[component_container-4] [INFO] [1763528539.424613348] [ros_gz_container]: 	 position
+[component_container-4] [INFO] [1763528539.424633199] [ros_gz_container]: 	 velocity
+[component_container-4] [INFO] [1763528539.424654567] [ros_gz_container]: 	 effort
+[component_container-4] [INFO] [1763528539.424686120] [ros_gz_container]: 	Command:
+[component_container-4] [INFO] [1763528539.424711835] [ros_gz_container]: 	 velocity
+[component_container-4] [INFO] [1763528539.424752660] [ros_gz_container]: Loading joint: wheel_right_joint
+[component_container-4] [INFO] [1763528539.424768994] [ros_gz_container]: 	State:
+[component_container-4] [INFO] [1763528539.424784016] [ros_gz_container]: 	 position
+[component_container-4] [INFO] [1763528539.424799486] [ros_gz_container]: 	 velocity
+[component_container-4] [INFO] [1763528539.424816437] [ros_gz_container]: 	 effort
+[component_container-4] [INFO] [1763528539.424831680] [ros_gz_container]: 	Command:
+[component_container-4] [INFO] [1763528539.424846019] [ros_gz_container]: 	 velocity
+[component_container-4] [INFO] [1763528539.424987692] [controller_manager]: Initialize hardware 'GazeboSimSystem' 
+[component_container-4] [WARN] [1763528539.425039493] [controller_manager]: Executor is not available during hardware component initialization for 'GazeboSimSystem'. Skipping node creation!
+[component_container-4] [INFO] [1763528539.425127927] [controller_manager]: Successful initialization of hardware 'GazeboSimSystem'
+[component_container-4] [INFO] [1763528539.426955911] [resource_manager]: 'configure' hardware 'GazeboSimSystem' 
+[component_container-4] [INFO] [1763528539.426998530] [ros_gz_container]: System Successfully configured!
+[component_container-4] [INFO] [1763528539.427034650] [resource_manager]: Successful 'configure' of hardware 'GazeboSimSystem'
+[component_container-4] [INFO] [1763528539.427052199] [resource_manager]: 'activate' hardware 'GazeboSimSystem' 
+[component_container-4] [INFO] [1763528539.427070924] [resource_manager]: Successful 'activate' of hardware 'GazeboSimSystem'
+[component_container-4] [WARN] [1763528539.427142676] [controller_manager]: Component 'GazeboSimSystem' does not have read or write statistics initialized, skipping registration.
+[component_container-4] [INFO] [1763528539.427165600] [controller_manager]: Resource Manager has been successfully initialized. Starting Controller Manager services...
+
+# ros2 control 终端命令通过服务实现的
+	# 查看 ros2 control 指令
+	$ ros2 control -h
+		usage: ros2 control [-h] Call `ros2 control <command> -h` for more detailed usage. ...
+		Various control related sub-commands
+		options:
+		  -h, --help            show this help message and exit
+
+		Commands:
+		  list_controller_types         Output the available controller types and their base classes
+		  list_controllers              Output the list of loaded controllers, their type and status
+		  list_hardware_components      Output the list of available hardware components
+		  list_hardware_interfaces      Output the list of available command and state interfaces
+		  load_controller               Load a controller in a controller manager
+		  reload_controller_libraries   Reload controller libraries
+		  set_controller_state          Adjust the state of the controller
+		  set_hardware_component_state  Adjust the state of the hardware component
+		  switch_controllers            Switch controllers in a controller manager
+		  unload_controller             Unload a controller in a controller manager
+		  view_controller_chains        Generates a diagram of the loaded chained controllers into /tmp/controller_diagram.gv.pdf
+
+
+	# 查看对应的 ros2 service
+	$ ros2 service list | grep controller
+		/controller_manager/configure_controller
+		/controller_manager/describe_parameters
+		/controller_manager/get_logger_levels
+		/controller_manager/get_parameter_types
+		/controller_manager/get_parameters
+		/controller_manager/get_type_description
+		/controller_manager/list_controller_types
+		/controller_manager/list_controllers
+		/controller_manager/list_hardware_components
+		/controller_manager/list_hardware_interfaces
+		/controller_manager/list_parameters
+		/controller_manager/load_controller
+		/controller_manager/reload_controller_libraries
+		/controller_manager/set_hardware_component_state
+		/controller_manager/set_logger_levels
+		/controller_manager/set_parameters
+		/controller_manager/set_parameters_atomically
+		/controller_manager/switch_controller
+		/controller_manager/unload_controller
+
+	# 列出所有 可用的 控制器类型
+	$ ros2 control list_controller_types
+	
+	# 列出硬件的 接口
+	$ ros2 control list_hardware_interfaces
+	
+	# 列出 硬件组件
+	$ ros2 control list_hardware_components 
+	
+	# tip: 一个接口 同一时间 智能被一个controller 占用
+	
+	
+--------------------------	
+# 使用关节状态的 发布控制器
+--------------------------	
+# Question: ######
+	# rviz2 中 可以查看到 左右轮的位置不对：
+	wheel_left_link： No transform from [wheel_left_link] to [base_link]
+	wheel_right_link： No transform from [wheel_right_link] to [base_link]
+	
+	# 【确认问题】 ->查看 tf 变换 -> 无 left|right的 TF
+	rqt-> Plugins -> Visualization -> TF tree
+	
+	# 确认 robot_state_publisher 节点 订阅 joint_states
+	$ ros2 node info /robot_state_publisher
+		/robot_state_publisher
+		  Subscribers:
+			/clock: rosgraph_msgs/msg/Clock
+			/joint_states: sensor_msgs/msg/JointState
+			/parameter_events: rcl_interfaces/msg/ParameterEvent
+			...
+	# 【解决思路】		
+	# 节点 robot_state_publisher 订阅 joint_states 话题，因此往 joint_states 话题上发送 wheel_left_link & wheel_right_link 数据，robot_state_publisher就可以订阅到。	
+	# 使用 joint_state_broadcaster/JointStateBroadcaster 发布 joint_states 话题
+	# 1. 在diff_drive_controller.yaml 中加入代码：
+		fishbot_joint_state_broadcaster:
+		  type: joint_state_broadcaster/JointStateBroadcaster 
+      
+    # 2. 加载 和激活
+    $ ros2 control load_controller fishbot_joint_state_broadcaster --set-state active
+		Successfully loaded controller fishbot_joint_state_broadcaster
+		Successfully loaded controller fishbot_joint_state_broadcaster into state active
+
+	# 【查看结果】
+	# $ ros2 topic echo /joint_states --once
+	# rviz 中  wheel_left_link & wheel_right_link 的问题 【已经解决】
+	
+	#【总结】
+		【手动加载】 fishbot_joint_state_broadcaster：
+			$ ros2 control load_controller fishbot_joint_state_broadcaster --set-state active
+		【如何自动加载】-> 集成 到 launch 文件 -> 
+			test_display.launch.py 中添加代码：
+			[---------------------
+			# 该 controller 加载时机 在 gz启动 spawn_entity 之后
+			action_load_joint_states_controller = ExecuteProcess(
+				cmd='ros2 control load_controller fishbot_joint_state_broadcaster --set-state active'.split(' '),
+				output='screen'
+			)
+			reg_action_load_joint_states_controller =  RegisterEventHandler(
+				event_handler=OnProcessExit(
+				    target_action= spawn_entity,
+				    on_exit=[action_load_joint_states_controller],
+				)
+			)
+			---------------------]
+		
+
+
+--------------------------	
+# 使用 力控制器  控制轮子
+--------------------------	
+代码查看：
+	1. fishbot_ros2_control.xacro
+	2. diff_drive_controller.yaml
+	3. 启动：$ ros2 launch chapt9_urdf_description test_display.launch.py 
+		[ros2-7] Successfully loaded controller fishbot_joint_state_broadcaster
+		[ros2-6] Successfully loaded controller fishbot_effort_controller
+		[ros2-6] Successfully loaded controller fishbot_effort_controller into state active
+		[ros2-7] Successfully loaded controller fishbot_joint_state_broadcaster into state active
+	4. 查看话题，并对轮子施加力
+		$ ros2 topic list | grep effort 
+			/fishbot_effort_controller/commands
+			/fishbot_effort_controller/transition_event
+
+		$ ros2 topic pub /fishbot_effort_controller/commands std_msgs/msg/Float64MultiArray "{data:[10,10]}"
+
+	5. 查看被使用的
+		$ ros2 control list_hardware_interfaces
+
+
+--------------------------	
+# 使用 两轮差速控制器 控制机器人
+--------------------------	
+# 概念：	两轮差速控制器，不仅仅是单纯的数据转发，还涉及到运动学计算，从而得到里程计信息和两轮的速度信息。
+#1. 在 diff_drive_controller.yaml 中添加：
+	-------------------------------------------------
+    fishbot_diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+    --------------------------------------------------
+    fishbot_diff_drive_controller:
+	  ros__parameters:
+		left_wheel_names: ["wheel_left_joint"]
+		right_wheel_names: ["wheel_right_joint"]
+
+		wheel_separation: 1.7         #轮间距
+		wheel_radius: 0.035
+
+		# 倍数：校准里程计时 使用到的参数
+		wheel_separation_multiplier: 1.0
+		left_wheel_radius_multiplier: 1.0
+		right_wheel_radius_multiplier: 1.0
+
+		publish_rate: 50.0
+		odom_frame_id: odom
+		base_frame_id: base_footprint   
+		pose_covariance_diagonal : [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
+		twist_covariance_diagonal: [0.001, 0.0, 0.0, 0.0, 0.0, 0.01]
+
+		open_loop: false
+		enable_odom_tf: true
+
+		# cmd_vel 0.5s 接收不到 就会停止
+		cmd_vel_timeout: 0.5
+		use_stamped_vel: true
+
+#2. 在test_display.launch.py 编写启动代码：
+	------------------------------
+	action_load_diff_drive_controller= ExecuteProcess(
+        cmd='ros2 control load_controller fishbot_diff_drive_controller --set-state active'.split(' '),
+        output='screen'
+    )
+    ------------------------------
+    reg_action_load_diff_drive_controller =  RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action= spawn_entity,
+            on_exit=[action_load_diff_drive_controller],
+        )
+    )
+
+#3. 测试：rqt 发布 话题：/fishbot_diff_drive_controller/cmd_vel  类型：[geometry_msgs/msg/TwistStamped] 的数据。
+	rqt -> topics -> message publisher... -> 对勾 开始发布
+	
+#4. 优化话题
+#4.1 概述：
+	发现fishbot_diff_drive_controller 发布的话题如下：
+		/fishbot_diff_drive_controller/cmd_vel
+		/fishbot_diff_drive_controller/odom
+		/fishbot_diff_drive_controller/transition_event
+		/fishbot_joint_state_broadcaster/transition_event
+	需要把/fishbot_diff_drive_controller/cmd_vel & /fishbot_diff_drive_controller/odom 话题 进行remapping
+#4.2 话题remapping:在 fishbot_ros2_control.xacro 中 添加如下代码：
+	<gazebo>
+      <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find chapt9_urdf_description)/config/diff_drive_controller.yaml</parameters>
+        <ros> <!-- 添加 话题 remapping 代码 -->
+          <namespace>/</namespace>
+          <remapping>/fishbot_diff_drive_controller/odom:=/odom</remapping>
+          <remapping>/fishbot_diff_drive_controller/cmd_vel:=/cmd_vel</remapping>
+        </ros>
+      </plugin>
+    </gazebo>
+
+#4.3【可选】验证话题:$ ros2 topic list
+	 【可选】 cmd_vel 控制机器人：
+	 	$ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p stamped:=true 
+	【可选】： 查看 	fishbot_ros2_control.xacro 中用到的libgz_ros2_control-system.so， 查看源码
+	
+ros2 control 
+	/cmd_vel (Twist) 
+		↓ 订阅
+	[Diff Drive Controller] 
+		↓ 计算
+	/joint_trajectory (JointTrajectory)
+		↓ 发布
+	[Hardware Interface]
+		↓ 驱动
+	真实电机
+		↓ 反馈
+	/joint_states (JointState)
+		↓ 发布
+	[Controller]
+		↓ 积分
+	/odom (Odometry)
+
+--------------------------	
+# 使用 原生Gazebo插件法 控制机器人【不推荐】
+--------------------------	
+$ ros2 launch chapt9_urdf_description test_display2.launch.py 
+$ ros2 run teleop_twist_keyboard teleop_twist_keyboard 
+
+涉及到的代码文件：
+	test_display2.launch.py 
+	fishbot2.urdf.xacro
+	plugin/gazebo_control_plugin.xacro
+	ros_gz_bridge2.yaml
+
+
+--------------------------	
+# sensor
+--------------------------	
+参考： https://gazebosim.org/docs/harmonic/sensors/
+#流程：
+	1. world文件 my5.sdf 中添加：
+	    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" /> <!--  1. imu -->
+    	<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">  <!--  2. sensors -->
+    2. imu.urdf.xacro & camera.urdf.xacro  & camera.urdf.xacro 中添加：
+    	<!-- laser sensor -->
+		<!-- imu sensor -->
+		<!-- camera sensor -->
+		详情 请查看对应文件。
+	3. 查看话题：
+		$ gz topic -l
+		/camera
+		/camera_info
+		/clock
+		/gazebo/resource_paths
+		/gui/camera/pose
+		/gui/currently_tracked
+		/gui/track
+		/imu
+		/lidar
+		/lidar/points
+		/sensors/marker
+		/stats
+		/world/my5_world/clock
+		/world/my5_world/dynamic_pose/info
+		/world/my5_world/pose/info
+		/world/my5_world/scene/deletion
+		/world/my5_world/scene/info
+		/world/my5_world/state
+		/world/my5_world/stats
+		/world/my5_world/light_config
+		/world/my5_world/material_color
+
+	4. 桥接 gz to ros:
+		详情 请查看对应文件： ros_gz_bridge.yaml
+		$ ros2 run ros_gz_bridge parameter_bridge --help
+

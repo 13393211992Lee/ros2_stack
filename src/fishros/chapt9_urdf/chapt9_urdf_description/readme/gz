@@ -1,0 +1,483 @@
+gz tutorials
+--------------------
+	1.构建自己的机器人
+--------------------
+...
+
+--------------------
+	2.机器人移动
+--------------------
+终端 发送消息 控制机器人运动
+# 启动 sdf
+	$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/gz_demo/demo01.sdf
+# 查看话题
+	$ gz topic -l
+# 发布速度消息
+	$ gz topic -t "/cmd_vel" -m gz.msgs.Twist -p "linear: {x: 0.5}, angular: {z: 0.05}"
+# tip: run the simulation 才能看到机器人移动
+
+
+键盘按键 发送消息 控制机器人运动
+# 启动 sdf
+	$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/gz_demo/demo01.sdf
+# gazebo  右侧...Key Publisher
+	$ gz topic -l
+	keyboard/keypress	# 新发布的话题
+# 另一个终端监听键盘事件
+	$ gz topic -e -t /keyboard/keypress
+	data: 73		# 输出 所按下按键的 ascII 码
+	data: 16777251
+# TriggeredPublisher 负责 按键映射为 /cmd_vel话题  Twist类型  的消息
+#TriggeredPublisher代码： 在 <world> 标签下添加以下代码：
+	<plugin filename="gz-sim-triggered-publisher-system"
+		    name="gz::sim::systems::TriggeredPublisher">
+		<input type="gz.msgs.Int32" topic="/keyboard/keypress">
+		    <match field="data">16777234</match>
+		</input>
+		<output type="gz.msgs.Twist" topic="/cmd_vel">
+		    linear: {x: 0.0}, angular: {z: 0.5}
+		</output>
+	</plugin>
+
+
+--------------------
+	3.sdf world
+--------------------
+参考： /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/gz_demo/demo2_world.sdf
+
+--------------------
+	4.sensors 传感器
+--------------------
+参考 demo3_sensor_tutorial.sdf
+
+imu传感器
+ demo1_robot.sdf 添加imu传感器信息 -> 最终效果 demo3_sensor_tutorial.sdf
+1.	<world> 里面添加：
+	<plugin filename="gz-sim-imu-system"
+		    name="gz::sim::systems::Imu">
+	</plugin>
+2. chassis link 里面添加：
+	<sensor name="imu_sensor" type="imu">
+		<always_on>1</always_on>		<!-- 是否传感器数据 实时更新 -->
+		<update_rate>1</update_rate>	<!-- 传感器数据 实时更新 频率 -->
+		<visualize>true</visualize>
+		<topic>imu</topic>
+	</sensor>
+
+验证demo3_sensor_tutorial.sdf 和传感器数据信息
+$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/gz_demo/demo3_sensor_tutorial.sdf
+$ gz topic -e -t imu
+# tip: run the simulation 才可以订阅到传感器信息
+	
+	
+接触传感器 Contact sensor
+demo1_robot.sdf 添加 Contact 传感器信息 -> 最终效果 demo3_sensor_tutorial.sdf
+1. <world> 里面添加：wall模型
+<model name='wall'> [ <型号名称='墙'>] 
+    <static>true</static>
+    <pose>5 0 0 0 0 0</pose><!--pose relative to the world-->
+    <link name='box'>
+        <visual name='visual'>
+            <geometry>
+                <box>
+                    <size>0.5 10.0 2.0</size>
+                </box>
+            </geometry>
+            <!--let's add color to our link-->
+            <material>
+                <ambient>0.0 0.0 1.0 1</ambient>
+                <diffuse>0.0 0.0 1.0 1</diffuse>
+                <specular>0.0 0.0 1.0 1</specular>
+            </material>
+        </visual>
+        <collision name='collision'>
+            <geometry>
+                <box>
+                    <size>0.5 10.0 2.0</size>
+                </box>
+            </geometry>
+        </collision>
+    </link>
+</model>
+2.<world> 里面添加：
+<plugin filename="gz-sim-contact-system"
+        name="gz::sim::systems::Contact">
+</plugin>
+3. model wall 中的 box link 添加：
+<sensor name='sensor_contact' type='contact'>
+    <contact>
+        <collision>collision</collision>
+    </contact>
+</sensor>
+4.wall model  中添加TouchPlugin：
+<plugin filename="gz-sim-touchplugin-system"
+        name="gz::sim::systems::TouchPlugin">
+    <target>vehicle_blue</target>
+    <namespace>wall</namespace>
+    <time>0.001</time>
+    <enabled>true</enabled>
+</plugin>
+
+验证 Contact 传感器：
+1. 启动
+$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/urdf/gz_demo/demo3_sensor_tutorial.sdf
+2. 订阅
+$ gz topic -e -t /wall/touched
+3. 驱动撞墙
+gazebo gui 中  key publish, run the simulation
+然后才可以驱动robot 去撞墙
+4.撞墙反馈结果： data: true
+5.优化反馈结果：
+
+lidar 传感器
+url: https://gazebosim.org/docs/harmonic/sensors/
+
+--------------------
+	ros2 集成 gazebo
+https://gazebosim.org/docs/harmonic/ros2_overview/
+https://github.com/gazebosim/ros_gz/tree/jazzy/ros_gz_sim
+https://github.com/ros-controls/gz_ros2_control/tree/rolling/gz_ros2_control_demos/launch
+--------------------
+如何从 ROS 2 启动 Gazebo
+ros_gz_sim
+	# gz_server.launch.py   启动 Gazebo 服务器
+	ros2 launch ros_gz_sim gz_server.launch.py world_sdf_file:=empty.sdf
+	
+	# gz_sim.launch.py  	启动 Gazebo（服务器和 GUI）
+	ros2 launch ros_gz_sim gz_sim.launch.py gz_args:=empty.sdf
+
+launch 方式：
+	xml	不介绍
+	python	查看某文件
+	cli	指令如下：
+		$ ros2 launch ros_gz_sim ros_gz_sim.launch.py \
+			world_sdf_file:=empty.sdf \
+			bridge_name:=ros_gz_bridge \
+			config_file:=<path_to_your_YAML_file> \
+			use_composition:=True \
+			create_own_container:=True 
+	
+ros2_control		
+	将 ros2_control 与 Gazebo 一起使用，请查看 gz_ros2_control 存储库中的示例启动文件。
+	https://github.com/ros-controls/gz_ros2_control/tree/rolling/gz_ros2_control_demos/launch
+	...
+	
+
+--------------------
+	ros2 与 gazebo 交互
+--------------------
+ros_gz_bridge
+# ros_gz_bridge: run
+	ros2 run ros_gz_bridge parameter_bridge /scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan
+
+	ros_gz_bridge ：https://github.com/gazebosim/ros_gz
+# ros_gz_bridge : launch
+	ros2 launch ros_gz_bridge ros_gz_bridge.launch.py bridge_name:=ros_gz_bridge config_file:=<path_to_your_YAML_file>
+	
+	ros2 launch ros_gz_bridge ros_gz_bridge.launch.py bridge_name:=ros_gz_bridge config_file:=<path_to_your_YAML_file> use_composition:=True create_own_container:=True
+	
+	README 查询 消息类型是否被桥接器支持
+	https://github.com/gazebosim/ros_gz/blob/jazzy/ros_gz_bridge/README.md
+
+	ros_gz_sim_demos 包含所有主要驱动和传感器类型桥接的示例启动文件
+	https://github.com/gazebosim/ros_gz/tree/ros2/ros_gz_sim_demos
+
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 0.2, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}'
+
+	
+ros gz demo:
+https://github.com/gazebosim/ros_gz/blob/jazzy/ros_gz_bridge/README.md#example-1a-gazebo-transport-talker-and-ros-2-listener
+ros gz 通信案例1a:
+terminal1:	$ ros2 run ros_gz_bridge parameter_bridge /chatter@std_msgs/msg/String@gz.msgs.StringMsg
+terminal2:	$ ros2 topic echo /chatter
+terminal3:  $  gz topic -t /chatter -m gz.msgs.StringMsg -p 'data:"ccco"'
+
+ros gz 通信案例1b:
+terminal1:	$ ros2 run ros_gz_bridge parameter_bridge /chatter@std_msgs/msg/String@gz.msgs.StringMsg
+terminal2: $ gz topic -e -t /chatter	
+terminal3: $ ros2 topic pub /chatter std_msgs/msg/String "data: 'ccc'" --Once
+
+ros gz 通信案例2: 传递图片
+
+
+--------------------
+	Spawn model
+--------------------
+
+
+--------------------
+Question && Error
+--------------------
+Question1： rviz 中 wheel_left_link & wheel_right_link 找不到
+	$ ros2 launch chapt9_urdf_description test_robot_description.launch.py 
+	rviz 中提示：
+	Robot Model ->Status:Error
+	wheel_left_link
+	No transform from [wheel_left_link] to [base_link]
+	wheel_right_link
+	No transform from [wheel_right_link] to [base_link]
+
+原因： RViz 无法获取从 wheel_left_link 和 wheel_right_link 到 base_link 的 TF 变换
+执行： $ ros2 run joint_state_publisher joint_state_publisher
+
+Question2:
+ Gazebo 自己会发布 joint_states
+ $ ros2 launch chapt9_urdf_description test_robot_description.launch.py 
+ $ ros2 launch chapt9_urdf_description test_gz.launch.py 
+
+ $ gz topic -i -t /joint_states
+	No publishers on topic [/joint_states]
+	Subscribers [Address, Message Type]:
+	  tcp://192.168.100.104:43805, gz.msgs.Model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+===========================
+Gazebo Sim 8.10.0 
+Getting Started  入门指南
+url： https://gazebosim.org/api/sim/8/tutorials.html
+1. Installation: 安装
+2. Terminology: 涉及到的术语
+3. GUI 配置
+4. Server configuration 服务配置
+5. Model Command: 模型命令  使用命令行界面获取有关模拟中模型的信息。
+6. Pause and Run simulation: 暂停和运行仿真：使用 Gazebo 传输 API 来暂停和运行仿真。
+7. Reset simulation 重置模拟
+8. Finding resources: 查找资源：Gazebo 查找文件的不同方式。
+9. Debugging: 调试：有关调试 Gazebo 的信息。
+===========================
+3. GUI config
+加载  GUI config的方式：
+#方式1： 默认config
+	$ gz sim  会加载默认config
+	默认 配置文件在：/home/zhang/.gz/sim/8/gui.config
+#方式2： 指定config 文件
+	$ gz sim --gui-config '/home/zhang/.gz/sim/8/gui2.config'
+	# 可以通过 --gui-config 的方式传递参数文件
+#方式3： 通过sdf 文件加载， SDF 文件中的 <gui> 元素 包含 所需 config
+	$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/world/fuel_preview.sdf
+
+# 恢复默认设置，可以通过删除gui.config，再次运行 $ gz sim ，会重新生成 gui.config
+
+# Command line  命令行
+	使用命令行的原因：将 GUI 布局直接嵌入到每个 SDF 文件中通常不太方便。Gazebo 也支持从命令行加载配置文件。
+	1. $ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/world/fuel_preview.sdf
+	2. gazebo 界面右上角，选择eg: view angle, 另存为 eg:/home/zhang/桌面/ac.config
+	3. 加载该配置文件
+		$ gz sim /home/zhang/ws_github_nav2/src/fishros/chapt9_urdf/chapt9_urdf_description/world/fuel_preview.sdf --gui-config /home/zhang/桌面/ac.config
+
+4. Server configuration 服务配置
+如何加载插件：
+	a. 插件可以定义在以下几个地方[优先级 高> 低]
+		1. SDF 文件内的 <plugin> 元素。
+		2. 由 GZ_SIM_SERVER_CONFIG_PATH 环境变量定义的文件路径
+		3. 默认配置文件 $HOME/.gz/sim/<#>/server.config
+	b. 尝试1：
+		1. gz sim 启动， 默认情况下加载： /home/zhang/.gz/sim/8/server.config
+		2. 添加形状，形状因重力而坠落，因为physics system |  scene broadcaster已加载；
+		3. 删除  /home/zhang/.gz/sim/8/server.config 中的 gz-sim-physics-system，然后重新启动 gz sim
+		4. 查看结果
+	c. 尝试2：
+		1. $ gz sim -r /home/zhang/gz/simple_camera.sdf 
+		2. 查看结果：刷新图像显示插件，它将不会显示任何图像主题
+		3. 创建一个包含传感器系统的自定义配置文件 rendering_sensors_server.config
+		4. $ export GZ_SIM_SERVER_CONFIG_PATH=$HOME/gz/rendering_sensors_server.config
+		5. $ gz sim -r /home/zhang/gz/simple_camera.sdf 
+		6. 再次查看结果：刷新图像显示将显示相机主题，我们可以看到相机数据
+
+5. Model Command 模型命令  使用命令行界面获取有关模拟中模型的信息。
+	1. $ gz sim diff_drive.sdf
+	2. $ gz model --list
+			Requesting state for world [diff_drive]...
+			Available models:
+				- ground_plane
+				- vehicle_blue
+				- vehicle_green
+	3. 通过model_name 获取model完整信息
+		$ gz model -m vehicle_blue
+	4. gz model -m vehicle_blue --pose
+	5. $ gz model -m vehicle_blue --link 
+	   $ gz model -m vehicle_blue --link right_wheel
+	6. $ gz model -m vehicle_blue --joint
+	   $ gz model -m vehicle_blue --joint caster_wheel
+
+6. Pause and Run simulation: 暂停和运行仿真：使用 Gazebo 传输 API 来暂停和运行仿真。
+	1. gz sim default.sdf 用于查看 是否暂停
+	2. 当 Gazebo 以 headless 模式运行时，启动和暂停模拟的方法
+	2.1	启动模拟：
+		$ gz service -s /world/default/control --reqtype gz.msgs.WorldControl --reptype gz.msgs.Boolean --timeout 3000 --req 'pause: false'
+	2.2 暂停模拟：
+		$ gz service -s /world/default/control --reqtype gz.msgs.WorldControl --reptype gz.msgs.Boolean --timeout 3000 --req 'pause: true'
+	2.3 查看当前状态：暂停 or 启动
+		$ gz topic --echo --topic /stats -n 1
+
+
+7. Reset simulation 重置模拟
+		$ gz service -s /world/default/control --reqtype gz.msgs.WorldControl --reptype gz.msgs.Boolean --timeout 3000 --req 'reset: {all: true}'
+
+
+8. Finding resources: 查找资源：Gazebo 查找文件的不同方式。
+	#概念：Plugins是一个遵循特定 API 并在运行时加载的共享库。
+	#创建自己的系统插件： 	https://gazebosim.org/api/sim/8/createsystemplugins.html
+	#系统插件 加载 方式：SDF 文件中的标签，其中 filename 是共享库， name 是要加载的类。
+		1. 附加到世界： <world><plugin>
+		2. 连接到模型： <model><plugin>
+		3. 连接到传感器： <sensor><plugin>
+	# gazebo 寻找 system plugins 的顺序：
+		1. GZ_SIM_SYSTEM_PLUGIN_PATH 环境变量中的所有路径
+		2. $HOME/.gz/sim/plugins
+		3. 与 Gazebo 一起安装的系统
+	# Gazebo GUI 插件: https://gazebosim.org/libs/rendering
+		
+9. Debugging: 调试：有关调试 Gazebo 的信息。
+Debugging the server  调试服务器
+	1. Find the gz executable:  找到 gz 可执行文件
+		$ which gz
+			/opt/ros/jazzy/opt/gz_tools_vendor/bin/gz
+	2. Gazebo 的命令行工具基于 Ruby ，  启动 gdb 
+	$ gdb ruby
+	3. 使用所需的参数运行 Gazebo server
+		r /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz -s shapes.sdf
+	4. 像平常一样使用 GDB
+Debugging the GUI  调试 GUI
+	1. Find the gz executable:  找到 gz 可执行文件
+		$ which gz
+			/opt/ros/jazzy/opt/gz_tools_vendor/bin/gz
+	2. Gazebo 的命令行工具基于 Ruby ，  启动 gdb 
+	$ gdb ruby
+	3. 使用所需的参数运行 Gazebo GUI
+		r /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz -g 
+	4. 在另一个终端中运行 Gazebo 服务器。
+		$ gz sim -s -v 4 -r shapes.sdf
+	5. 像平常一样使用 GDB
+===========================
+Gazebo Sim 8.10.0 
+url： https://gazebosim.org/api/sim/8/tutorials.html
+GUI 和渲染功能
+1. 将相机移动到模型：将相机移动到模型位置。
+2.模型拍照：从不同角度（俯视、正面、侧面）拍摄模型照片。
+3. 视频录制器：从 3D 渲染窗口录制视频。    
+4. 无头渲染：通过远程机器的 GPU 生成传感器数据，无需 X 服务器。   
+5. 施加力和力矩：通过图形用户界面在模拟过程中对模型施加力和/或力矩。  
+6. 鼠标拖拽：通过在场景中使用力和力矩拖拽模型来移动模型。
+7. 全局光照：为 GUI 和传感器视图启用全局光照。
+===========================
+1. 将相机移动到模型：将相机移动到模型位置。
+如何将相机移动到模型:
+	1.1 $ gz sim diff_drive.sdf
+	1.2 在gazebo 中右上角加载  View Angle
+	1.3 调用服务
+		$ gz service  -s /gui/move_to/model --reqtype gz.msgs.GUICamera  --reptype gz.msgs.Boolean -r 'name: "vehicle_green", pose: {position: {z:5}, orientation: {x:0, y:0, z: -1, w:0}}, projection_type: "orbit"' --timeout 5000
+
+2.模型拍照：从不同角度（俯视、正面、侧面）拍摄模型照片
+	$ gz sim  -s -r -v 4 --iterations 50 model_photo_shoot.sdf
+
+3. 视频录制器：从 3D 渲染窗口录制视频。    
+	$ gz sim -v 4 video_record_dbl_pendulum.sdf
+	
+4. 无头渲染：通过远程机器的 GPU 生成传感器数据，无需 X 服务器。   
+	 EGL:	https://www.khronos.org/egl
+	 $ gz sim -v 4 -s --headless-rendering sensors_demo.sdf
+	未完待续
+5. 施加力和力矩：通过图形用户界面在模拟过程中对模型施加力和/或力矩。  
+	1. $ gz sim shapes.sdf
+	2. 选择link 并 施加力 
+		2.1 从插件下拉菜单中选择 Apply Force Torque 插件
+		2.2 选择  cylinder 模型 link
+		2.3 施加 力 和 力矩
+6. 鼠标拖拽：通过在场景中使用力和力矩拖拽模型来移动模型。
+	1. $ gz sim shapes.sdf
+	2. 从插件下拉菜单中选择 Mouse Drag 来加载插件
+	3. 力矩torque = ctrl + left click
+		力force = ctrl+ right click
+7. 全局光照：为 GUI 和传感器视图启用全局光照。
+
+===========================
+Gazebo Sim 8.10.0 
+url： https://gazebosim.org/api/sim/8/tutorials.html
+从 Gazebo 经典迁移
+1. Plugins: 插件：逐步介绍为 Gazebo 经典和 Gazebo 编写插件之间的差异
+2. SDF：从 Gazebo 经典迁移到 Gazebo 的 SDF 文件
+3. World API: 从 Gazebo 经典迁移到 Gazebo 时在 Gazebo 中应调用哪些 World C++函数
+4. Light API: 从 Gazebo 经典迁移到 Gazebo 时，关于调用哪些 Light C++函数的指南
+5. Joint API：从 Gazebo 经典迁移到 Gazebo 时，关于调用哪些 Joint C++函数的指南
+6. Actor API：从 Gazebo 经典迁移到 Gazebo 时，关于调用哪些 Actor C++函数的指南
+7. 传感器 API：指南，说明在从 Gazebo 经典迁移到 Gazebo 时，应调用哪些 Sensor C++函数
+8. Case Study:案例研究：将 ArduPilot ModelPlugin 从 Gazebo 经典迁移到 Gazebo。
+===========================
+===========================
+Gazebo Sim 8.10.0 
+url： https://gazebosim.org/api/sim/8/tutorials.html
+Intermediate  中级
+1. Logging: Record and play back time series of world state.
+    	日志记录：记录和回放世界状态的时间序列。
+2. Light config: Configure lights in the scene.
+	灯光配置：配置场景中的灯光。
+3. Levels: Load entities on demand in large environments.
+    	层级：在大环境中按需加载实体。
+4. Python interfaces 
+	Python 接口 
+===========================
+===========================
+Advanced users  高级用户
+1. Physics engines: Loading different physics engines.
+    物理引擎：加载不同的物理引擎。
+2. Entity creation: Insert models or lights using services.
+    实体创建：通过服务插入模型或光源。
+3. ERB Template: Use ERB, a templating language, to generate SDF files for simulation worlds.
+    ERB 模板：使用 ERB（嵌入式 Ruby）这种模板语言来生成仿真世界的 SDF（Simulation Description Format）文件。
+4. Distributed Simulation: Spread simulation across several processes.
+    分布式仿真：将仿真分布到多个进程中。
+
+Developers  开发者
+1. Create System Plugins: Programmatically access simulation using C++ plugins.
+    创建系统插件：使用 C++插件程序化访问模拟。
+2. Using components: Using components in a system plugin.
+    使用组件：在系统插件中使用组件。
+3. Rendering plugins: Write plugins that use Gazebo Rendering on the server and client.
+    渲染插件：编写在服务器和客户端使用 Gazebo 渲染的插件。
+4. Test Fixture: Writing automated CI tests
+    测试夹具：编写自动化的 CI 测试
+===========================
+===========================
+Maritime  
+1. Buoyancy: Describe the theory of operation of the buoyancy plugin.
+    浮力：描述浮力插件的运行原理。
+2. Hydrodynamics: Describe the theory of operation of the hydrodynamics plugin.
+    流体动力学：描述流体动力学插件的运行原理。
+3. Create a maritime vehicle: How to design a maritime model.
+    创建船舶：如何设计船舶模型。
+4. Adding visuals: How to import 3D meshes into Gazebo to increase the visual fidelity of your model.
+    添加视觉效果：如何将 3D 网格导入 Gazebo 以提升模型的视觉保真度。
+5. Frame of reference: Decide the frame of reference for your model.
+    参考系：确定模型的参考系。
+6. Adding system plugins: How to add plugins to your model to provide extra capabilities to it.
+    添加系统插件：如何向您的模型添加插件以提供额外功能。
+7. Create a lander vehicle: How to create a lander robot.
+    创建着陆器车辆：如何创建着陆机器人。
+8. Create an underwater vehicle: How to create an underwater robot.
+    创建水下车辆：如何创建水下机器人。
+9. Create a surface vehicle: How to create a maritime surface robot.
+    创建水面车辆：如何创建海上水面机器人。
+===========================
