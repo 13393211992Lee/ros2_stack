@@ -9,7 +9,19 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(xacro REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
+# 添加可执行文件
+add_executable(twist_converter src/twist_converter.cpp)
+# 链接依赖
+ament_target_dependencies(twist_converter
+  rclcpp
+  geometry_msgs
+)
+# 安装
+install(TARGETS twist_converter
+  DESTINATION lib/${PROJECT_NAME}
+)
 install(
   DIRECTORY launch urdf config world
   DESTINATION share/${PROJECT_NAME}
