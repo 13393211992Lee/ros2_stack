@@ -1,0 +1,41 @@
+- topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+
+# IMU 传感器桥接
+- ros_topic_name: "/imu"
+  gz_topic_name: "imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+# LiDAR 2D 激光扫描数据
+- ros_topic_name: "/scan"
+  gz_topic_name: "lidar"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+# LiDAR 3D 点云数据
+- ros_topic_name: "/scan/points"
+  gz_topic_name: "lidar/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  direction: GZ_TO_ROS
+
+# 图像数据
+- ros_topic_name: "/camera/image_raw"
+  gz_topic_name: "camera"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+# 相机标定参数
+- ros_topic_name: "/camera/camera_info"
+  gz_topic_name: "/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+

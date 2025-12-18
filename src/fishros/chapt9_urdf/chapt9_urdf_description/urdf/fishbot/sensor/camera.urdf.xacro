@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find chapt9_urdf_description)/urdf/fishbot/common_inertial.xacro"/>
+
+  <xacro:macro name="camera_xacro" params="camera_name xyz">
+    <link name="${camera_name}_link">
+      <visual>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <box size="0.02 0.10 0.02"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.9"/>
+        </material>
+      </visual>
+
+      <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <box size="0.02 0.10 0.02"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.9"/>
+        </material>
+      </collision>
+      <xacro:box_inertia m="0.05" w="0.02" h="0.1" d="0.02" />
+    </link>
+    <joint name="${camera_name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${camera_name}_link"/>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <axis xyz="0 0 0"/>
+    </joint>
+
+    <!-- gazebo中的颜色 ： 未生效 -->
+    <!-- <gazebo reference="${camera_name}_link" >
+      <material>Gazebo/White</material>
+    </gazebo> -->
+
+    <!-- camera sensor -->
+    <gazebo reference="${camera_name}_link">
+      <sensor name='${camera_name}_link' type='camera'>"
+        <camera>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format> <!-- RGB 格式 -->
+          </image>
+
+          <!-- 裁剪平面 -->
+          <clip>                    
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+
+          <!-- 相机内参（可选） -->
+          <!-- <intrinsics>
+            <fx>277.191356</fx>
+            <fy>277.191356</fy>
+            <cx>320.5</cx>
+            <cy>240.5</cy>
+            <s>0</s>
+          </intrinsics> -->
+          
+          <!-- 保存图像到磁盘（调试用） -->
+          <save enabled="false">
+            <path>/tmp</path>
+          </save>
+        </camera>   
+        <pose>0 0 0 0 0 0</pose>
+        <topic>camera</topic>       
+        <update_rate>30</update_rate>      
+        <always_on>1</always_on>
+        <visualize>true</visualize>
+      </sensor>
+      
+    </gazebo>
+  </xacro:macro>
+
+  </robot>

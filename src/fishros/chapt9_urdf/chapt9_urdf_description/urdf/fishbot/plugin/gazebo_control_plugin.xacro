@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="gazebo_control_plugin" >
+      <gazebo>
+        <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+          <!-- wheels -->
+          <left_joint>wheel_left_joint</left_joint>
+          <right_joint>wheel_right_joint</right_joint>
+        
+          <!-- kinematics -->
+          <wheel_separation>0.17</wheel_separation>
+          <wheel_radius>${wheel_radius}</wheel_radius>
+        
+          <!-- limits -->
+          <max_linear_acceleration>0.1</max_linear_acceleration>
+        
+          <!-- input -->
+          <topic>/demo/cmd_vel</topic>
+        
+          <!-- output -->
+          <odom_topic>/demo/odom</odom_topic>
+          <tf_topic>/demo/tf</tf_topic>
+        
+          <frame_id>odom</frame_id>
+          <child_frame_id>base_footprint</child_frame_id>
+        </plugin>
+      </gazebo>
+
+      <gazebo>
+        <plugin
+          filename="gz-sim-joint-state-publisher-system"
+          name="gz::sim::systems::JointStatePublisher">
+          <topic>/demo/joint_states</topic>
+        </plugin>
+      </gazebo>
+    </xacro:macro>
+
+    
+</robot>

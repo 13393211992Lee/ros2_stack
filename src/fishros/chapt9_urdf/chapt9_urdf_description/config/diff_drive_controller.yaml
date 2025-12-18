@@ -1,0 +1,52 @@
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    fishbot_joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    fishbot_effort_controller:
+      type: effort_controllers/JointGroupEffortController 
+
+    fishbot_diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+fishbot_effort_controller:
+  ros__parameters:
+    joints:
+      - wheel_left_joint
+      - wheel_right_joint
+    command_interfaces:
+      - effort
+    state_interfaces:
+      - position
+      - velocity
+      - effort
+
+fishbot_diff_drive_controller:
+  ros__parameters:
+    left_wheel_names: ["wheel_left_joint"]
+    right_wheel_names: ["wheel_right_joint"]
+
+    wheel_separation: 0.17         #轮间距
+    wheel_radius: 0.035
+
+    # 倍数：校准里程计时 使用到的参数
+    wheel_separation_multiplier: 1.0
+    left_wheel_radius_multiplier: 1.0
+    right_wheel_radius_multiplier: 1.0
+
+    publish_rate: 50.0
+    odom_frame_id: odom
+    base_frame_id: base_footprint
+    pose_covariance_diagonal : [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
+    twist_covariance_diagonal: [0.001, 0.0, 0.0, 0.0, 0.0, 0.01]
+
+    open_loop: false
+    enable_odom_tf: true
+
+    # cmd_vel 0.5s 接收不到 就会停止
+    cmd_vel_timeout: 0.5
+    use_stamped_vel: false   # true: TwistStamped   false:Twist
+

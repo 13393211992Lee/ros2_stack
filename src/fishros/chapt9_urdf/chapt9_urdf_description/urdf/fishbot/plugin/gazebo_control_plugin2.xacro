@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="gazebo_control_plugin" >
+      <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+        <!-- wheels -->
+        <left_joint>wheel_left_joint</left_joint>
+        <right_joint>wheel_right_joint</right_joint>
+      
+        <!-- kinematics -->
+        <wheel_separation>0.4</wheel_separation>
+        <wheel_radius>${wheel_radius}</wheel_radius>
+      
+        <!-- limits -->
+        <max_linear_acceleration>0.1</max_linear_acceleration>
+      
+        <!-- input -->
+        <topic>/demo/cmd_vel</topic>
+      
+        <!-- output -->
+        <odom_topic>/demo/odom</odom_topic>
+        <tf_topic>/tf</tf_topic>
+      
+        <frame_id>odom</frame_id>
+        <child_frame_id>base_link</child_frame_id>
+      </plugin>
+      
+      <plugin
+        filename="gz-sim-joint-state-publisher-system"
+        name="gz::sim::systems::JointStatePublisher">
+        <topic>joint_states</topic>
+      </plugin>
+    </xacro:macro>
+
+    
+    <!-- 为 URDF 或 SDF 添加 ros2_control 标签 -->
+    <ros2_control name="GazeboSimSystem" type="system">
+      <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </hardware>
+      <joint name="wheel_left_joint">
+        <command_interface name="velocity">
+          <param name="min">-1</param>
+          <param name="max">1</param>
+        </command_interface>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="wheel_right_joint">
+        <command_interface name="velocity">
+          <param name="min">-1</param>
+          <param name="max">1</param>
+        </command_interface>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+  
+    <!-- 添加 gz_ros2_control 插件 -->
+    <gazebo>
+      <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find chapt9_urdf_description)/config/diff_drive_controller.yaml</parameters>
+      </plugin>
+    </gazebo>
+
+</robot>

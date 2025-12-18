@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find chapt9_urdf_description)/urdf/fishbot/common_inertial.xacro"/>
+
+  <xacro:macro name="laser_xacro" params=" xyz">
+    <!-- 雷达支撑杆 -->
+    <link name="laser_cylinder_link">
+      <visual>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <cylinder radius="0.01" length="0.10"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.9"/>
+        </material>
+      </visual>
+
+      <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <cylinder radius="0.01" length="0.10"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.9"/>
+        </material>
+      </collision>
+      <xacro:cylinder_inertia m="0.1" r="0.01" h="0.1"/>
+    </link>
+
+    <!-- 雷达 -->
+    <link name="laser_link">
+      <visual>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <cylinder radius="0.02" length="0.02"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.9"/>
+        </material>
+      </visual>
+
+      <collision>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> 
+        <geometry>
+          <cylinder radius="0.02" length="0.02"/>
+        </geometry>
+        <material name = "black">
+            <color rgba="0.0 0.0 0.0 0.9"/>
+        </material>
+      </collision>
+      <xacro:sphere_inertia  r="0.1" m="0.1"/>
+      
+    </link>
+
+    <!-- laser sensor -->
+    <gazebo reference="laser_link">
+      <sensor name='gpu_lidar' type='gpu_lidar'>"
+        <pose relative_to='laser_link'>0 0 0 0 0 0</pose>
+        <topic>lidar</topic>
+        <update_rate>10</update_rate>
+        <gz_frame_id>laser_link</gz_frame_id>
+        <ray>
+            <scan>
+                <horizontal>
+                    <samples>640</samples>
+                    <resolution>1</resolution>
+                    <min_angle>-1.396263</min_angle>
+                    <max_angle>1.396263</max_angle>
+                </horizontal>
+                <vertical>
+                    <samples>1</samples>
+                    <resolution>0.01</resolution>
+                    <min_angle>0</min_angle>
+                    <max_angle>0</max_angle>
+                </vertical>
+            </scan>
+            <range>
+                <min>0.08</min>
+                <max>10.0</max>
+                <resolution>0.01</resolution>
+            </range>
+        </ray>
+        <always_on>1</always_on>
+        <visualize>true</visualize>
+      </sensor>
+    </gazebo>
+
+
+    <joint name="laser_joint" type="fixed">
+      <parent link="laser_cylinder_link"/>
+      <child link="laser_link"/>
+      <origin xyz="0.0 0.0 0.05" rpy="0 0 0"/>
+      <axis xyz="0 0 0"/>
+    </joint>
+
+    <joint name="laser_cylinder_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="laser_cylinder_link"/>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <axis xyz="0 0 0"/>
+    </joint>
+
+  </xacro:macro>
+
+  </robot>

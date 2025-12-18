@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="gazebo_sensor_plugin">
+        <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"> </plugin>
+        <gazebo reference="imu_0_link">
+            <sensor name="imu_sensor" type="imu"> 
+                <always_on>1</always_on>
+                <update_rate>1</update_rate>
+                <visualize>true</visualize>
+                <topic>imu</topic>
+            </sensor>
+        </gazebo>
+
+        <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+            <render_engine>ogre2</render_engine>
+        </plugin>
+        <sensor name='gpu_lidar' type='gpu_lidar'>"
+            <pose relative_to='laser_link'>0 0 0 0 0 0</pose>
+            <topic>lidar</topic>
+            <update_rate>10</update_rate>
+            <ray>
+                <scan>
+                    <horizontal>
+                        <samples>640</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-1.396263</min_angle>
+                        <max_angle>1.396263</max_angle>
+                    </horizontal>
+                    <vertical>
+                        <samples>1</samples>
+                        <resolution>0.01</resolution>
+                        <min_angle>0</min_angle>
+                        <max_angle>0</max_angle>
+                    </vertical>
+                </scan>
+                <range>
+                    <min>0.08</min>
+                    <max>10.0</max>
+                    <resolution>0.01</resolution>
+                </range>
+            </ray>
+            <always_on>1</always_on>
+            <visualize>true</visualize>
+        </sensor>
+    </xacro:macro>
+</robot>
